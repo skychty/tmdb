@@ -145,7 +145,7 @@ func (c *Client) DiscoverRegionalPopularTV(ctx context.Context, region, language
 
 	now := time.Now().UTC()
 	query := endpoint.Query()
-	query.Set("watch_region", region)
+	query.Set("with_origin_country", region)
 	query.Set("language", language)
 	query.Set("page", strconv.Itoa(page))
 	query.Set("sort_by", "popularity.desc")

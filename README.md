@@ -10,7 +10,7 @@
 - `GET /api/v1/movies/regional-popular` — 地区热门影片（TMDB `discover`，按 region 筛选当地院线上映）
 - `GET /api/v1/tv/on-the-air` — 正在播出的连续剧（TMDB `tv/on_the_air`）
 - `GET /api/v1/tv/popular` — 全球热门连续剧（TMDB `tv/popular`）
-- `GET /api/v1/tv/regional-popular` — 地区热门连续剧（TMDB `discover/tv`，按 watch_region 筛选）
+- `GET /api/v1/tv/regional-popular` — 地区热门连续剧（TMDB `discover/tv`，按 `with_origin_country` 筛选当地制作）
 - `GET /health` — 健康检查
 
 ## 公网部署
@@ -101,6 +101,6 @@ go run ./cmd/server
 ## 缓存策略
 
 - 电影 Key：`tmdb:movies:{latest|popular|regional-popular}:{region}:{language}:{page}`
-- 连续剧 Key：`tmdb:tv:{on-the-air|popular|regional-popular}:{region}:{language}:{page}`
+- 连续剧 Key：`tmdb:tv:{on-the-air|popular|regional-popular-v2}:{region}:{language}:{page}`
 - TTL：24 小时
 - 同一 key 并发 miss 时使用 singleflight 合并 TMDB 请求

@@ -40,7 +40,7 @@ func (s *TVService) GetPopularTV(ctx context.Context, region, language string, p
 }
 
 func (s *TVService) GetRegionalPopularTV(ctx context.Context, region, language string, page int) (model.TVListResponse, error) {
-	return s.getTVShows(ctx, "regional-popular", region, language, page, s.tmdb.DiscoverRegionalPopularTV)
+	return s.getTVShows(ctx, "regional-popular-v2", region, language, page, s.tmdb.DiscoverRegionalPopularTV)
 }
 
 type fetchTVFunc func(ctx context.Context, region, language string, page int) (model.TMDBTVListResponse, error)
