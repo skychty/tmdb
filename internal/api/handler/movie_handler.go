@@ -1,0 +1,94 @@
+package handler
+
+import (
+	"context"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+
+	"tmdb/internal/geoip"
+	"tmdb/internal/model"
+	"tmdb/internal/service"
+)
+
+var regionPattern = regexp.MustCompile(`^[A-Za-z]{2}$`)
+
+type MovieHandler struct {
+	service  *service.MovieService
+	geoIP    *geoip.Resolver
+}
+
+func NewMovieHandler(service *service.MovieService, geoIP *geoip.Resolver) *MovieHandler {
+	return &MovieHandler{
+		service: service,
+		geoIP:   geoIP,
+	}
+}
+
+func (h *MovieHandler) GetLatest(c *gin.Context) {
+	h.handleList(c, h.service.GetLatestMovies)
+}
+
+func (h *MovieHandler) GetPopular(c *gin.Context) {
+	h.handleList(c, h.service.GetPopularMovies)
+}
+
+type listFunc func(ctx context.Context, region, language string, page int) (model.MovieListResponse, error)
+
+func (h *MovieHandler) handleList(c *gin.Context, fn listFunc) {
+	region, regionSource, err := h.resolveRegion(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	language := c.DefaultQuery("language", "zh-CN")
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive integer"})
+		return
+	}
+
+	resp, err := fn(c.Request.Context(), region, language, page)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Header("X-Region", region)
+	c.Header("X-Region-Source", regionSource)
+	c.JSON(http.StatusOK, resp)
+}
+
+func (h *MovieHandler) resolveRegion(c *gin.Context) (region, source string, err error) {
+	queryRegion := strings.TrimSpace(c.Query("region"))
+	if queryRegion != "" {
+		if !regionPattern.MatchString(queryRegion) {
+			return "", "", errInvalidRegion
+		}
+		return strings.ToUpper(queryRegion), "query", nil
+	}
+
+	region, err = h.geoIP.ResolveRegion(c.Request.Context(), c.ClientIP())
+	if err != nil {
+		return "", "", err
+	}
+	return region, "ip", nil
+}
+
+var errInvalidRegion = &regionError{msg: "region must be a 2-letter ISO 3166-1 code"}
+
+type regionError struct {
+	msg string
+}
+
+func (e *regionError) Error() string {
+	return e.msg
+}
+
+func Health(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
