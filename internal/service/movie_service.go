@@ -39,6 +39,10 @@ func (s *MovieService) GetPopularMovies(ctx context.Context, region, language st
 	return s.getMovies(ctx, "popular", region, language, page, s.tmdb.Popular)
 }
 
+func (s *MovieService) GetRegionalPopularMovies(ctx context.Context, region, language string, page int) (model.MovieListResponse, error) {
+	return s.getMovies(ctx, "regional-popular", region, language, page, s.tmdb.DiscoverRegionalPopular)
+}
+
 type fetchFunc func(ctx context.Context, region, language string, page int) (model.TMDBMovieListResponse, error)
 
 func (s *MovieService) getMovies(

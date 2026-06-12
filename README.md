@@ -6,8 +6,16 @@
 
 - `GET /` — 浏览器首页（含 API 快捷链接）
 - `GET /api/v1/movies/latest` — 本地最新上线影片（对应 TMDB `now_playing`）
-- `GET /api/v1/movies/popular` — 本地最热门影片（对应 TMDB `popular`）
+- `GET /api/v1/movies/popular` — 全球热门影片（TMDB `popular`，各 region 列表相近）
+- `GET /api/v1/movies/regional-popular` — 地区热门影片（TMDB `discover`，按 region 筛选当地院线上映）
+- `GET /api/v1/tv/on-the-air` — 正在播出的连续剧（TMDB `tv/on_the_air`）
+- `GET /api/v1/tv/popular` — 全球热门连续剧（TMDB `tv/popular`）
+- `GET /api/v1/tv/regional-popular` — 地区热门连续剧（TMDB `discover/tv`，按 watch_region 筛选）
 - `GET /health` — 健康检查
+
+## 公网部署
+
+完整公网部署步骤见 **[DEPLOY.md](DEPLOY.md)**（含 Nginx、HTTPS、安全组、运维命令）。
 
 ## 快速启动
 
@@ -29,6 +37,10 @@ docker compose up --build
 ```bash
 curl "http://localhost:8080/api/v1/movies/latest?region=CN&language=zh-CN"
 curl "http://localhost:8080/api/v1/movies/popular?region=CN&language=zh-CN"
+curl "http://localhost:8080/api/v1/movies/regional-popular?region=CN&language=zh-CN"
+curl "http://localhost:8080/api/v1/tv/on-the-air?region=CN&language=zh-CN"
+curl "http://localhost:8080/api/v1/tv/popular?region=CN&language=zh-CN"
+curl "http://localhost:8080/api/v1/tv/regional-popular?region=CN&language=zh-CN"
 ```
 
 ## 局域网访问
@@ -88,6 +100,7 @@ go run ./cmd/server
 
 ## 缓存策略
 
-- Key：`tmdb:movies:{latest|popular}:{region}:{language}:{page}`
+- 电影 Key：`tmdb:movies:{latest|popular|regional-popular}:{region}:{language}:{page}`
+- 连续剧 Key：`tmdb:tv:{on-the-air|popular|regional-popular}:{region}:{language}:{page}`
 - TTL：24 小时
 - 同一 key 并发 miss 时使用 singleflight 合并 TMDB 请求

@@ -34,8 +34,9 @@ func main() {
 
 	tmdbClient := tmdbclient.NewClient(cfg.TMDBBaseURL, cfg.TMDBAccessToken, cfg.TMDBAPIKey)
 	movieService := service.NewMovieService(redisCache, tmdbClient, cfg.TMDBImageBase, cfg.CacheTTL)
+	tvService := service.NewTVService(redisCache, tmdbClient, cfg.TMDBImageBase, cfg.CacheTTL)
 	geoIPResolver := geoip.NewResolver(redisCache, cfg.DefaultRegion, cfg.GeoIPCacheTTL)
-	router := api.NewRouter(movieService, geoIPResolver)
+	router := api.NewRouter(movieService, tvService, geoIPResolver)
 
 	addr := fmt.Sprintf("%s:%d", cfg.HTTPHost, cfg.HTTPPort)
 	server := &http.Server{

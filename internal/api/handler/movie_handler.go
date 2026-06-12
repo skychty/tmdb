@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -36,10 +35,14 @@ func (h *MovieHandler) GetPopular(c *gin.Context) {
 	h.handleList(c, h.service.GetPopularMovies)
 }
 
+func (h *MovieHandler) GetRegionalPopular(c *gin.Context) {
+	h.handleList(c, h.service.GetRegionalPopularMovies)
+}
+
 type listFunc func(ctx context.Context, region, language string, page int) (model.MovieListResponse, error)
 
 func (h *MovieHandler) handleList(c *gin.Context, fn listFunc) {
-	region, regionSource, err := h.resolveRegion(c)
+	region, regionSource, err := resolveRegion(c, h.geoIP)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -61,22 +64,6 @@ func (h *MovieHandler) handleList(c *gin.Context, fn listFunc) {
 	c.Header("X-Region", region)
 	c.Header("X-Region-Source", regionSource)
 	c.JSON(http.StatusOK, resp)
-}
-
-func (h *MovieHandler) resolveRegion(c *gin.Context) (region, source string, err error) {
-	queryRegion := strings.TrimSpace(c.Query("region"))
-	if queryRegion != "" {
-		if !regionPattern.MatchString(queryRegion) {
-			return "", "", errInvalidRegion
-		}
-		return strings.ToUpper(queryRegion), "query", nil
-	}
-
-	region, err = h.geoIP.ResolveRegion(c.Request.Context(), c.ClientIP())
-	if err != nil {
-		return "", "", err
-	}
-	return region, "ip", nil
 }
 
 var errInvalidRegion = &regionError{msg: "region must be a 2-letter ISO 3166-1 code"}

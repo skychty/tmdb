@@ -24,11 +24,20 @@ func Index(c *gin.Context) {
 <body>
   <h1>TMDB 影片信息服务器</h1>
   <p>服务运行中。局域网内其它设备可通过 <code>http://%s</code> 访问。</p>
-  <h2>API 链接</h2>
+  <h2>电影 API</h2>
   <ul>
     <li><a href="/api/v1/movies/latest">最新上线（自动识别区域）</a></li>
-    <li><a href="/api/v1/movies/popular">最热门（自动识别区域）</a></li>
-    <li><a href="/api/v1/movies/latest?region=CN&language=zh-CN">最新上线（指定 CN）</a></li>
+    <li><a href="/api/v1/movies/popular">全球热门（TMDB popular）</a></li>
+    <li><a href="/api/v1/movies/regional-popular?region=CN">地区热门（TMDB discover）</a></li>
+  </ul>
+  <h2>连续剧 API</h2>
+  <ul>
+    <li><a href="/api/v1/tv/on-the-air?region=CN">正在播出</a></li>
+    <li><a href="/api/v1/tv/popular?region=CN">全球热门剧集</a></li>
+    <li><a href="/api/v1/tv/regional-popular?region=CN">地区热门剧集</a></li>
+  </ul>
+  <h2>其它</h2>
+  <ul>
     <li><a href="/health">健康检查</a></li>
   </ul>
   <h2>参数说明</h2>
