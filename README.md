@@ -17,6 +17,10 @@
 
 完整公网部署步骤见 **[DEPLOY.md](DEPLOY.md)**（含 Nginx、HTTPS、安全组、运维命令）。
 
+## API 文档
+
+完整接口说明、返回字段及示例见 **[API.md](API.md)**。
+
 ## 快速启动
 
 1. 复制环境变量文件并填入 TMDB Token：
