@@ -50,7 +50,7 @@ func (s *TVService) getTVShows(
 	region = strings.ToUpper(strings.TrimSpace(region))
 	language = strings.TrimSpace(language)
 	if language == "" {
-		language = "zh-CN"
+		language = "en-US"
 	}
 
 	cacheKey := buildTVCacheKey(listType, region, language, page)

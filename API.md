@@ -25,7 +25,7 @@ https://tmdb.blogsite.org
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
 | `region` | string | 否 | 自动识别 | ISO 3166-1 两位国家/地区代码，如 `CN`、`US`、`JP`、`GB`（英国请用 `GB`，不要用 `UK`） |
-| `language` | string | 否 | `zh-CN` | 语言代码，控制标题、简介等翻译，如 `zh-CN`、`en-US`、`ja-JP` |
+| `language` | string | 否 | `en-US` | 语言代码，控制标题、简介等翻译，如 `en-US`、`zh-CN`、`ja-JP` |
 | `page` | int | 否 | `1` | 页码，从 1 开始 |
 
 **region 自动识别规则：**
@@ -96,7 +96,7 @@ https://tmdb.blogsite.org
 **请求示例：**
 
 ```
-GET /api/v1/movies/latest?region=CN&language=zh-CN&page=1
+GET /api/v1/movies/latest?region=CN&language=en-US&page=1
 ```
 
 ---
@@ -110,7 +110,7 @@ GET /api/v1/movies/latest?region=CN&language=zh-CN&page=1
 **请求示例：**
 
 ```
-GET /api/v1/movies/popular?region=CN&language=zh-CN&page=1
+GET /api/v1/movies/popular?region=CN&language=en-US&page=1
 ```
 
 ---
@@ -124,7 +124,7 @@ GET /api/v1/movies/popular?region=CN&language=zh-CN&page=1
 **请求示例：**
 
 ```
-GET /api/v1/movies/regional-popular?region=CN&language=zh-CN&page=1
+GET /api/v1/movies/regional-popular?region=CN&language=en-US&page=1
 ```
 
 ---
@@ -140,7 +140,7 @@ GET /api/v1/movies/regional-popular?region=CN&language=zh-CN&page=1
 **请求示例：**
 
 ```
-GET /api/v1/tv/on-the-air?region=CN&language=zh-CN&page=1
+GET /api/v1/tv/on-the-air?region=CN&language=en-US&page=1
 ```
 
 ---
@@ -152,7 +152,7 @@ GET /api/v1/tv/on-the-air?region=CN&language=zh-CN&page=1
 **请求示例：**
 
 ```
-GET /api/v1/tv/popular?region=CN&language=zh-CN&page=1
+GET /api/v1/tv/popular?region=CN&language=en-US&page=1
 ```
 
 ---
@@ -367,7 +367,7 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 curl "https://tmdb.blogsite.org/api/v1/movies/latest"
 
 # 指定 region 和 language
-curl "https://tmdb.blogsite.org/api/v1/movies/regional-popular?region=CN&language=zh-CN&page=1"
+curl "https://tmdb.blogsite.org/api/v1/movies/regional-popular?region=CN&language=en-US&page=1"
 
 # 连续剧
 curl "https://tmdb.blogsite.org/api/v1/tv/regional-popular?region=JP&language=ja-JP"

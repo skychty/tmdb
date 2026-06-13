@@ -50,7 +50,7 @@ func (s *MovieService) getMovies(
 	region = strings.ToUpper(strings.TrimSpace(region))
 	language = strings.TrimSpace(language)
 	if language == "" {
-		language = "zh-CN"
+		language = "en-US"
 	}
 
 	cacheKey := buildCacheKey(listType, region, language, page)

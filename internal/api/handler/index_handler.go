@@ -43,7 +43,7 @@ func Index(c *gin.Context) {
   <h2>参数说明</h2>
   <ul>
     <li><code>region</code>：可选，国家/地区代码，如 CN、US；未指定时根据客户端 IP 自动识别</li>
-    <li><code>language</code>：可选，默认 zh-CN</li>
+    <li><code>language</code>：可选，默认 en-US</li>
     <li><code>page</code>：可选，默认 1</li>
   </ul>
 </body>

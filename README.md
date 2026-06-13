@@ -39,12 +39,12 @@ docker compose up --build
 3. 测试 API：
 
 ```bash
-curl "http://localhost:8080/api/v1/movies/latest?region=CN&language=zh-CN"
-curl "http://localhost:8080/api/v1/movies/popular?region=CN&language=zh-CN"
-curl "http://localhost:8080/api/v1/movies/regional-popular?region=CN&language=zh-CN"
-curl "http://localhost:8080/api/v1/tv/on-the-air?region=CN&language=zh-CN"
-curl "http://localhost:8080/api/v1/tv/popular?region=CN&language=zh-CN"
-curl "http://localhost:8080/api/v1/tv/regional-popular?region=CN&language=zh-CN"
+curl "http://localhost:8080/api/v1/movies/latest?region=CN&language=en-US"
+curl "http://localhost:8080/api/v1/movies/popular?region=CN&language=en-US"
+curl "http://localhost:8080/api/v1/movies/regional-popular?region=CN&language=en-US"
+curl "http://localhost:8080/api/v1/tv/on-the-air?region=CN&language=en-US"
+curl "http://localhost:8080/api/v1/tv/popular?region=CN&language=en-US"
+curl "http://localhost:8080/api/v1/tv/regional-popular?region=CN&language=en-US"
 ```
 
 ## 局域网访问
@@ -57,7 +57,7 @@ hostname -I
 
 # 在其它设备的浏览器中打开
 http://10.0.0.11:8080/
-http://10.0.0.11:8080/api/v1/movies/latest?region=CN&language=zh-CN
+http://10.0.0.11:8080/api/v1/movies/latest?region=CN&language=en-US
 ```
 
 若无法访问，请检查防火墙是否放行 8080 端口：
@@ -80,7 +80,7 @@ go run ./cmd/server
 | 参数 | 必填 | 说明 |
 |------|------|------|
 | region | 否 | ISO 3166-1 两位国家/地区代码，如 `CN`；未指定时根据客户端 IP 自动识别 |
-| language | 否 | 语言，默认 `zh-CN` |
+| language | 否 | 语言，默认 `en-US` |
 | page | 否 | 页码，默认 `1` |
 
 响应头会返回区域来源：

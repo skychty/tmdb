@@ -201,7 +201,7 @@ curl https://api.example.com/health
 curl -s -D - "https://api.example.com/api/v1/movies/latest" -o /dev/null | grep X-Region
 
 # 指定区域
-curl "https://api.example.com/api/v1/movies/latest?region=CN&language=zh-CN"
+curl "https://api.example.com/api/v1/movies/latest?region=CN&language=en-US"
 curl "https://api.example.com/api/v1/movies/popular?region=US&language=en-US"
 ```
 
@@ -222,13 +222,13 @@ curl "https://api.example.com/api/v1/movies/popular?region=US&language=en-US"
 
 ```
 GET https://api.example.com/api/v1/movies/latest
-GET https://api.example.com/api/v1/movies/popular?region=CN&language=zh-CN&page=1
+GET https://api.example.com/api/v1/movies/popular?region=CN&language=en-US&page=1
 ```
 
 | 参数 | 必填 | 说明 |
 |------|------|------|
 | region | 否 | 国家/地区代码；未指定时根据客户端公网 IP 自动识别 |
-| language | 否 | 默认 `zh-CN` |
+| language | 否 | 默认 `en-US` |
 | page | 否 | 默认 `1` |
 
 ---

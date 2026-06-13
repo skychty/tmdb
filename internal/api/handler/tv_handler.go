@@ -45,7 +45,7 @@ func (h *TVHandler) handleList(c *gin.Context, fn tvListFunc) {
 		return
 	}
 
-	language := c.DefaultQuery("language", "zh-CN")
+	language := c.DefaultQuery("language", "en-US")
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be a positive integer"})
