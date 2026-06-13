@@ -39,7 +39,7 @@ func (h *TVHandler) GetRegionalPopular(c *gin.Context) {
 type tvListFunc func(ctx context.Context, region, language string, page int) (model.TVListResponse, error)
 
 func (h *TVHandler) handleList(c *gin.Context, fn tvListFunc) {
-	region, regionSource, err := resolveRegion(c, h.geoIP)
+	regionResult, err := resolveRegion(c, h.geoIP)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -52,13 +52,12 @@ func (h *TVHandler) handleList(c *gin.Context, fn tvListFunc) {
 		return
 	}
 
-	resp, err := fn(c.Request.Context(), region, language, page)
+	resp, err := fn(c.Request.Context(), regionResult.region, language, page)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Header("X-Region", region)
-	c.Header("X-Region-Source", regionSource)
+	applyRegionHeaders(c, regionResult)
 	c.JSON(http.StatusOK, resp)
 }

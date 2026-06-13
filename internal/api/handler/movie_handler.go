@@ -39,7 +39,7 @@ func (h *MovieHandler) GetRegionalPopular(c *gin.Context) {
 type listFunc func(ctx context.Context, region, language string, page int) (model.MovieListResponse, error)
 
 func (h *MovieHandler) handleList(c *gin.Context, fn listFunc) {
-	region, regionSource, err := resolveRegion(c, h.geoIP)
+	regionResult, err := resolveRegion(c, h.geoIP)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -52,14 +52,13 @@ func (h *MovieHandler) handleList(c *gin.Context, fn listFunc) {
 		return
 	}
 
-	resp, err := fn(c.Request.Context(), region, language, page)
+	resp, err := fn(c.Request.Context(), regionResult.region, language, page)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Header("X-Region", region)
-	c.Header("X-Region-Source", regionSource)
+	applyRegionHeaders(c, regionResult)
 	c.JSON(http.StatusOK, resp)
 }
 

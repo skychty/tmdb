@@ -41,6 +41,7 @@ https://tmdb.blogsite.org
 |--------|------|------|
 | `X-Region` | 实际使用的区域代码 | `CN` |
 | `X-Region-Source` | 区域来源 | `query`、`cloudflare`、`geolite2`、`default` |
+| `X-Client-IP` | 自动识别时用于解析区域的客户端 IP | `203.0.113.1`（手动传 `region` 时不返回） |
 | `Access-Control-Allow-Origin` | CORS | `*` |
 
 ### HTTP 状态码
