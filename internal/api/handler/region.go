@@ -45,22 +45,10 @@ func resolveRegion(c *gin.Context, geoIP *geoip.Resolver) (regionResolveResult, 
 
 	ip := clientIP(c)
 	result := regionResolveResult{clientIP: ip}
-	if geoip.IsLocalIP(ip) {
-		result.region = geoIP.DefaultRegion()
-		result.source = "default"
-		logRegionResolve(c, result)
-		return result, nil
-	}
 
-	if region, ok := geoIP.LookupCountry(ip); ok {
-		result.region = region
-		result.source = "geolite2"
-		logRegionResolve(c, result)
-		return result, nil
-	}
-
-	result.region = geoIP.DefaultRegion()
-	result.source = "default"
+	lookup := geoIP.ResolveRegion(c.Request.Context(), ip)
+	result.region = lookup.Region
+	result.source = lookup.Source
 	logRegionResolve(c, result)
 	return result, nil
 }

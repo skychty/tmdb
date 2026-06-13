@@ -32,15 +32,17 @@ https://tmdb.blogsite.org
 
 1. 请求参数 `region`（`X-Region-Source: query`）
 2. Cloudflare 头 `CF-IPCountry`（`X-Region-Source: cloudflare`）
-3. MaxMind GeoLite2 本地库查客户端 IP（`X-Region-Source: geolite2`）
+3. MaxMind GeoLite2 本地库查客户端 IP（`X-Region-Source: geolite2`，仅 ip-api 不可用时）
 4. 内网 IP 或解析失败时使用 `DEFAULT_REGION`（`X-Region-Source: default`）
+
+**ip-api 与 GeoLite2：** 未命中 Redis 缓存时优先调用 ip-api（精度更高）；ip-api 失败时降级 GeoLite2。结果缓存到 Redis（默认 7 天），同一 IP 不会重复请求 ip-api。
 
 ### 响应头
 
 | 响应头 | 说明 | 示例 |
 |--------|------|------|
 | `X-Region` | 实际使用的区域代码 | `CN` |
-| `X-Region-Source` | 区域来源 | `query`、`cloudflare`、`geolite2`、`default` |
+| `X-Region-Source` | 区域来源 | `query`、`cloudflare`、`ip-api`、`cache`、`geolite2`、`default` |
 | `X-Client-IP` | 自动识别时用于解析区域的客户端 IP | `203.0.113.1`（手动传 `region` 时不返回） |
 | `Access-Control-Allow-Origin` | CORS | `*` |
 

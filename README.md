@@ -91,7 +91,7 @@ go run ./cmd/server
 
 响应头会返回区域来源：
 - `X-Region`：实际使用的区域代码
-- `X-Region-Source`：`query`（API 指定）、`cloudflare`（Cloudflare 头）、`geolite2`（本地 GeoIP 库）、`default`（内网/解析失败）
+- `X-Region-Source`：`query`（API 指定）、`cloudflare`（Cloudflare 头）、`ip-api`（网络查询）、`cache`（Redis 缓存）、`geolite2`（本地库降级）、`default`（内网/解析失败）
 
 ## 环境变量
 
@@ -108,6 +108,7 @@ go run ./cmd/server
 | TMDB_RATE_BURST | TMDB 限流突发容量 | `40` |
 | TMDB_QUEUE_TIMEOUT | 排队等待 TMDB 令牌超时 | `5s` |
 | GEOIP_DB_PATH | GeoLite2 数据库路径 | `data/GeoLite2-Country.mmdb` |
+| GEOIP_CACHE_TTL | IP 区域识别 Redis 缓存有效期 | `168h` |
 | MAXMIND_LICENSE_KEY | MaxMind License Key（用于下载 GeoLite2） | - |
 | DEFAULT_REGION | IP 无法识别时的默认区域（含内网 IP） | `CN` |
 | HTTP_HOST | 监听地址（`0.0.0.0` 允许局域网访问） | `0.0.0.0` |

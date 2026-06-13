@@ -25,6 +25,7 @@ type Config struct {
 	HTTPPort        int
 	DefaultRegion string
 	GeoIPDBPath   string
+	GeoIPCacheTTL time.Duration
 }
 
 func Load() (*Config, error) {
@@ -65,6 +66,13 @@ func Load() (*Config, error) {
 
 	cfg.TMDBRateLimit = getEnvFloat("TMDB_RATE_LIMIT", 40)
 	cfg.TMDBRateBurst = getEnvInt("TMDB_RATE_BURST", int(cfg.TMDBRateLimit))
+
+	geoIPCacheStr := getEnv("GEOIP_CACHE_TTL", "168h")
+	geoIPCacheTTL, err := time.ParseDuration(geoIPCacheStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GEOIP_CACHE_TTL %q: %w", geoIPCacheStr, err)
+	}
+	cfg.GeoIPCacheTTL = geoIPCacheTTL
 
 	if cfg.TMDBAccessToken == "" && cfg.TMDBAPIKey == "" {
 		return nil, fmt.Errorf("TMDB_ACCESS_TOKEN or TMDB_API_KEY is required")
