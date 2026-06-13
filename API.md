@@ -28,17 +28,19 @@ https://tmdb.blogsite.org
 | `language` | string | 否 | `en-US` | 语言代码，控制标题、简介等翻译，如 `en-US`、`zh-CN`、`ja-JP` |
 | `page` | int | 否 | `1` | 页码，从 1 开始 |
 
-**region 自动识别规则：**
+**region 自动识别规则（按优先级）：**
 
-- 未传 `region` 时，服务器根据客户端公网 IP 解析国家代码
-- 内网 IP 或解析失败时，使用服务端配置的 `DEFAULT_REGION`（默认 `CN`）
+1. 请求参数 `region`（`X-Region-Source: query`）
+2. Cloudflare 头 `CF-IPCountry`（`X-Region-Source: cloudflare`）
+3. MaxMind GeoLite2 本地库查客户端 IP（`X-Region-Source: geolite2`）
+4. 内网 IP 或解析失败时使用 `DEFAULT_REGION`（`X-Region-Source: default`）
 
 ### 响应头
 
 | 响应头 | 说明 | 示例 |
 |--------|------|------|
 | `X-Region` | 实际使用的区域代码 | `CN` |
-| `X-Region-Source` | 区域来源 | `query`（请求参数指定）或 `ip`（IP 自动识别） |
+| `X-Region-Source` | 区域来源 | `query`、`cloudflare`、`geolite2`、`default` |
 | `Access-Control-Allow-Origin` | CORS | `*` |
 
 ### HTTP 状态码

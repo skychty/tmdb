@@ -23,8 +23,8 @@ type Config struct {
 	TMDBQueueTimeout  time.Duration
 	HTTPHost          string
 	HTTPPort        int
-	DefaultRegion   string
-	GeoIPCacheTTL   time.Duration
+	DefaultRegion string
+	GeoIPDBPath   string
 }
 
 func Load() (*Config, error) {
@@ -38,7 +38,8 @@ func Load() (*Config, error) {
 		RedisAddr:       getEnv("REDIS_ADDR", "127.0.0.1:6379"),
 		HTTPHost:        getEnv("HTTP_HOST", "0.0.0.0"),
 		HTTPPort:        getEnvInt("HTTP_PORT", 8080),
-		DefaultRegion:   strings.ToUpper(getEnv("DEFAULT_REGION", "CN")),
+		DefaultRegion: strings.ToUpper(getEnv("DEFAULT_REGION", "CN")),
+		GeoIPDBPath:   getEnv("GEOIP_DB_PATH", "data/GeoLite2-Country.mmdb"),
 	}
 
 	ttlStr := getEnv("CACHE_TTL", "24h")
@@ -64,13 +65,6 @@ func Load() (*Config, error) {
 
 	cfg.TMDBRateLimit = getEnvFloat("TMDB_RATE_LIMIT", 40)
 	cfg.TMDBRateBurst = getEnvInt("TMDB_RATE_BURST", int(cfg.TMDBRateLimit))
-
-	geoIPCacheStr := getEnv("GEOIP_CACHE_TTL", "24h")
-	geoIPCacheTTL, err := time.ParseDuration(geoIPCacheStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid GEOIP_CACHE_TTL %q: %w", geoIPCacheStr, err)
-	}
-	cfg.GeoIPCacheTTL = geoIPCacheTTL
 
 	if cfg.TMDBAccessToken == "" && cfg.TMDBAPIKey == "" {
 		return nil, fmt.Errorf("TMDB_ACCESS_TOKEN or TMDB_API_KEY is required")

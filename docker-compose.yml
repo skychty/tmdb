@@ -17,6 +17,9 @@ services:
       - .env
     environment:
       REDIS_ADDR: redis:6379
+      GEOIP_DB_PATH: /app/data/GeoLite2-Country.mmdb
+    volumes:
+      - ./data/GeoLite2-Country.mmdb:/app/data/GeoLite2-Country.mmdb:ro
     depends_on:
       redis:
         condition: service_healthy

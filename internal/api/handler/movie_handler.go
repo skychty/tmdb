@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -12,8 +11,6 @@ import (
 	"tmdb/internal/model"
 	"tmdb/internal/service"
 )
-
-var regionPattern = regexp.MustCompile(`^[A-Za-z]{2}$`)
 
 type MovieHandler struct {
 	service  *service.MovieService

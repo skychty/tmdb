@@ -23,20 +23,26 @@
 
 ## 快速启动
 
-1. 复制环境变量文件并填入 TMDB Token：
+1. 复制环境变量文件并填入 TMDB Token 与 MaxMind License Key：
 
 ```bash
 cp .env.example .env
-# 编辑 .env，设置 TMDB_ACCESS_TOKEN
+# 编辑 .env，设置 TMDB_ACCESS_TOKEN 和 MAXMIND_LICENSE_KEY
 ```
 
-2. 使用 Docker Compose 启动：
+2. 下载 GeoLite2 数据库：
+
+```bash
+bash scripts/download-geolite2.sh
+```
+
+3. 使用 Docker Compose 启动：
 
 ```bash
 docker compose up --build
 ```
 
-3. 测试 API：
+4. 测试 API：
 
 ```bash
 curl "http://localhost:8080/api/v1/movies/latest?region=CN&language=en-US"
@@ -85,7 +91,7 @@ go run ./cmd/server
 
 响应头会返回区域来源：
 - `X-Region`：实际使用的区域代码
-- `X-Region-Source`：`query`（API 指定）或 `ip`（IP 自动识别）
+- `X-Region-Source`：`query`（API 指定）、`cloudflare`（Cloudflare 头）、`geolite2`（本地 GeoIP 库）、`default`（内网/解析失败）
 
 ## 环境变量
 
@@ -101,7 +107,8 @@ go run ./cmd/server
 | TMDB_RATE_LIMIT | TMDB 全局限流（请求/秒） | `40` |
 | TMDB_RATE_BURST | TMDB 限流突发容量 | `40` |
 | TMDB_QUEUE_TIMEOUT | 排队等待 TMDB 令牌超时 | `5s` |
-| GEOIP_CACHE_TTL | IP 区域识别缓存有效期 | `24h` |
+| GEOIP_DB_PATH | GeoLite2 数据库路径 | `data/GeoLite2-Country.mmdb` |
+| MAXMIND_LICENSE_KEY | MaxMind License Key（用于下载 GeoLite2） | - |
 | DEFAULT_REGION | IP 无法识别时的默认区域（含内网 IP） | `CN` |
 | HTTP_HOST | 监听地址（`0.0.0.0` 允许局域网访问） | `0.0.0.0` |
 | HTTP_PORT | 服务端口 | `8080` |

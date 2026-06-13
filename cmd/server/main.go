@@ -37,7 +37,12 @@ func main() {
 	cacheStore := service.NewCacheStore(redisCache, cfg.CacheTTL, cfg.StaleCacheTTL)
 	movieService := service.NewMovieService(cacheStore, tmdbClient, cfg.TMDBImageBase)
 	tvService := service.NewTVService(cacheStore, tmdbClient, cfg.TMDBImageBase)
-	geoIPResolver := geoip.NewResolver(redisCache, cfg.DefaultRegion, cfg.GeoIPCacheTTL)
+	geoIPResolver, err := geoip.NewResolver(cfg.GeoIPDBPath, cfg.DefaultRegion)
+	if err != nil {
+		log.Fatalf("geoip init: %v", err)
+	}
+	defer geoIPResolver.Close()
+
 	router := api.NewRouter(movieService, tvService, geoIPResolver)
 
 	addr := fmt.Sprintf("%s:%d", cfg.HTTPHost, cfg.HTTPPort)
@@ -50,6 +55,7 @@ func main() {
 	log.Printf("server listening on http://%s", addr)
 		log.Printf("  tmdb rate limit: %.0f req/s, queue timeout: %s, stale cache: %s",
 			cfg.TMDBRateLimit, cfg.TMDBQueueTimeout, cfg.StaleCacheTTL)
+		log.Printf("  geoip db: %s", cfg.GeoIPDBPath)
 		for _, ip := range listAccessibleIPs(cfg.HTTPPort) {
 			log.Printf("  accessible at http://%s", ip)
 		}

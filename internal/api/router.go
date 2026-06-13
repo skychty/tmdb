@@ -11,6 +11,7 @@ import (
 
 func NewRouter(movieService *service.MovieService, tvService *service.TVService, geoIP *geoip.Resolver) *gin.Engine {
 	router := gin.New()
+	_ = router.SetTrustedProxies([]string{"127.0.0.1", "::1"})
 	router.Use(gin.Recovery(), middleware.CORS(), middleware.RequestLog())
 
 	movieHandler := handler.NewMovieHandler(movieService, geoIP)

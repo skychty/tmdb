@@ -14,7 +14,8 @@
   Go API（Docker）
     ├── Redis（Docker 内网，不暴露公网）
     ├── TMDB API
-    └── ip-api.com（IP 区域识别）
+    ├── MaxMind GeoLite2（本地 IP 区域识别）
+    └── Cloudflare CF-IPCountry（域名接入 CF 后优先使用）
 ```
 
 ---
@@ -92,17 +93,42 @@ TMDB_BASE_URL=https://api.themoviedb.org/3
 TMDB_IMAGE_BASE=https://image.tmdb.org/t/p
 REDIS_ADDR=redis:6379
 CACHE_TTL=24h
-GEOIP_CACHE_TTL=24h
+GEOIP_DB_PATH=/app/data/GeoLite2-Country.mmdb
+MAXMIND_LICENSE_KEY=你的MaxMindLicenseKey
 DEFAULT_REGION=CN
 HTTP_HOST=0.0.0.0
 HTTP_PORT=8080
 ```
 
-> **注意：** `.env` 含密钥，不要提交到 Git。Token 在 [TMDB API 设置页](https://www.themoviedb.org/settings/api) 获取。
+> **注意：** `.env` 含密钥，不要提交到 Git。Token 在 [TMDB API 设置页](https://www.themoviedb.org/settings/api) 获取；License Key 在 [MaxMind 账号页](https://www.maxmind.com/en/accounts/current/license-key) 获取。
 
 ---
 
-## 六、启动服务（生产模式）
+## 六、下载 GeoLite2 数据库
+
+服务启动前需要本地 GeoIP 数据库文件（约 6MB）：
+
+```bash
+cd /opt/tmdb
+# 在 .env 中配置 MAXMIND_LICENSE_KEY 后执行
+bash scripts/download-geolite2.sh
+ls -lh data/GeoLite2-Country.mmdb
+```
+
+脚本会将数据库保存到 `data/GeoLite2-Country.mmdb`，Docker 以只读方式挂载进容器。
+
+**定期更新（建议每周）：**
+
+```bash
+cd /opt/tmdb && bash scripts/download-geolite2.sh
+docker compose -f docker-compose.prod.yml restart app
+```
+
+或使用 MaxMind 官方 `geoipupdate` 工具自动更新到 `data/` 目录。
+
+---
+
+## 七、启动服务（生产模式）
 
 项目提供 `docker-compose.prod.yml`，特点：
 - Redis **不**映射到公网
@@ -124,7 +150,7 @@ curl http://127.0.0.1:8080/health
 
 ---
 
-## 七、配置域名 DNS
+## 八、配置域名 DNS
 
 在域名服务商添加 A 记录：
 
@@ -142,7 +168,7 @@ dig +short api.example.com
 
 ---
 
-## 八、Nginx 反向代理
+## 九、Nginx 反向代理
 
 复制项目自带配置模板：
 
@@ -164,7 +190,7 @@ sudo systemctl reload nginx
 
 ---
 
-## 九、申请 HTTPS 证书
+## 十、申请 HTTPS 证书
 
 ```bash
 sudo certbot --nginx -d api.example.com
@@ -180,7 +206,7 @@ curl https://api.example.com/health
 
 ---
 
-## 十、系统防火墙
+## 十一、系统防火墙
 
 ```bash
 sudo ufw allow OpenSSH
@@ -191,7 +217,7 @@ sudo ufw status
 
 ---
 
-## 十一、公网 API 验证
+## 十二、公网 API 验证
 
 ```bash
 # 健康检查
@@ -212,11 +238,26 @@ curl "https://api.example.com/api/v1/movies/popular?region=US&language=en-US"
 | 响应头 | 含义 |
 |--------|------|
 | `X-Region` | 实际使用的区域代码（如 `CN`） |
-| `X-Region-Source` | `query`（API 指定）或 `ip`（IP 自动识别） |
+| `X-Region-Source` | `query`（API 指定）、`cloudflare`（CF 头）、`geolite2`（本地库）、`default`（内网/解析失败） |
 
 ---
 
-## 十二、设备端接入
+## 十三、接入 Cloudflare（可选，正式上线推荐）
+
+域名尚未接入 Cloudflare 时，区域识别走 GeoLite2 本地库，无需额外配置。
+
+正式上线后建议将域名 DNS 改为 Cloudflare **橙云代理**：
+
+1. 在 Cloudflare 添加站点，将 NS 记录改为 Cloudflare 提供的地址
+2. 添加 A 记录指向服务器公网 IP，开启代理（橙色云朵）
+3. SSL/TLS 模式建议 **Full (strict)**（服务器仍保留 Nginx + Certbot 证书）
+4. 确认 Nginx 已转发 Cloudflare 头（项目模板 `deploy/nginx-tmdb.conf` 已包含）
+
+接入后，未传 `region` 时优先使用 Cloudflare 注入的 `CF-IPCountry`，响应头 `X-Region-Source: cloudflare`。
+
+---
+
+## 十四、设备端接入
 
 设备端请求示例：
 
@@ -233,7 +274,7 @@ GET https://api.example.com/api/v1/movies/popular?region=CN&language=en-US&page=
 
 ---
 
-## 十三、日常运维
+## 十五、日常运维
 
 ```bash
 cd /opt/tmdb
@@ -261,19 +302,20 @@ Docker 服务默认开机自启。Compose 中已配置 `restart: unless-stopped`
 
 ---
 
-## 十四、故障排查
+## 十六、故障排查
 
 | 现象 | 排查步骤 |
 |------|----------|
 | 外网无法访问 | 检查云安全组是否放行 80/443；`sudo ufw status` |
 | 502 Bad Gateway | `docker compose -f docker-compose.prod.yml ps` 确认 app 在运行；`curl http://127.0.0.1:8080/health` |
 | TMDB 请求失败 | 检查 `.env` 中 `TMDB_ACCESS_TOKEN` 是否有效 |
-| 区域识别不准 | 确认 Nginx 传递了 `X-Real-IP`；公网 IP 才会走 GeoIP |
+| 启动失败 geoip init | 确认已执行 `scripts/download-geolite2.sh`，且 `data/GeoLite2-Country.mmdb` 存在 |
+| 区域识别不准 | 确认 Nginx 传递了 `X-Real-IP` / `CF-Connecting-IP`；公网 IP 才会走 GeoLite2 |
 | Redis 连接失败 | 确认 `REDIS_ADDR=redis:6379`（Compose 内网地址） |
 
 ---
 
-## 十五、安全清单
+## 十七、安全清单
 
 - [ ] `.env` 未提交到 Git
 - [ ] Redis 6379 未暴露公网
@@ -282,13 +324,16 @@ Docker 服务默认开机自启。Compose 中已配置 `restart: unless-stopped`
 - [ ] 云安全组仅开放必要端口
 - [ ] TMDB Token 定期轮换（泄露时在 TMDB 后台重新生成）
 
+- [ ] MaxMind License Key 未提交到 Git
+
 ---
 
-## 十六、快速命令备忘
+## 十八、快速命令备忘
 
 ```bash
 # 一键部署（首次）
 cd /opt/tmdb && cp .env.example .env && nano .env
+bash scripts/download-geolite2.sh
 docker compose -f docker-compose.prod.yml up -d --build
 
 # 一键更新
