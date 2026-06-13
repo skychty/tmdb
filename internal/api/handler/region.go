@@ -93,17 +93,64 @@ func isCloudflareRequest(c *gin.Context) bool {
 
 func clientIP(c *gin.Context) string {
 	if isCloudflareRequest(c) {
-		if ip := strings.TrimSpace(c.GetHeader("CF-Connecting-IP")); ip != "" {
+		if ip := strings.TrimSpace(c.GetHeader("CF-Connecting-IP")); isPublicIP(ip) {
 			return ip
 		}
 	}
-	if ip := strings.TrimSpace(c.GetHeader("X-Real-IP")); ip != "" {
+
+	if ip := pickClientIP(c.GetHeader("X-Real-IP"), c.GetHeader("X-Forwarded-For")); ip != "" {
 		return ip
 	}
-	if ip := remoteHost(c.Request.RemoteAddr); ip != "" && !geoip.IsLocalIP(ip) {
+
+	if ip := remoteHost(c.Request.RemoteAddr); isPublicIP(ip) {
 		return ip
 	}
+
 	return c.ClientIP()
+}
+
+// pickClientIP resolves the original client IP from proxy headers.
+// When multiple proxies are involved, X-Real-IP is usually the immediate upstream
+// (last X-Forwarded-For hop) and the leftmost X-Forwarded-For entry is the client.
+func pickClientIP(xRealIP, xForwardedFor string) string {
+	xRealIP = strings.TrimSpace(xRealIP)
+	xffIPs := parseForwardedFor(xForwardedFor)
+
+	if len(xffIPs) >= 2 && xRealIP != "" && xffIPs[len(xffIPs)-1] == xRealIP {
+		if isPublicIP(xffIPs[0]) {
+			return xffIPs[0]
+		}
+	}
+
+	if len(xffIPs) == 1 && isPublicIP(xffIPs[0]) {
+		return xffIPs[0]
+	}
+
+	if isPublicIP(xRealIP) {
+		return xRealIP
+	}
+
+	return ""
+}
+
+func parseForwardedFor(xForwardedFor string) []string {
+	parts := strings.Split(xForwardedFor, ",")
+	ips := make([]string, 0, len(parts))
+	for _, part := range parts {
+		ip := strings.TrimSpace(part)
+		if ip != "" {
+			ips = append(ips, ip)
+		}
+	}
+	return ips
+}
+
+func isPublicIP(ip string) bool {
+	parsed := net.ParseIP(strings.TrimSpace(ip))
+	if parsed == nil {
+		return false
+	}
+	return !geoip.IsLocalIP(ip)
 }
 
 func remoteHost(remoteAddr string) string {
