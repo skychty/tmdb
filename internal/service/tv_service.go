@@ -5,29 +5,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"golang.org/x/sync/singleflight"
 
-	"tmdb/internal/cache"
 	"tmdb/internal/model"
 	tmdbclient "tmdb/internal/tmdb"
 )
 
 type TVService struct {
-	cache     cache.Cache
+	store     *CacheStore
 	tmdb      *tmdbclient.Client
 	imageBase string
-	cacheTTL  time.Duration
 	group     singleflight.Group
 }
 
-func NewTVService(cache cache.Cache, tmdb *tmdbclient.Client, imageBase string, cacheTTL time.Duration) *TVService {
+func NewTVService(store *CacheStore, tmdb *tmdbclient.Client, imageBase string) *TVService {
 	return &TVService{
-		cache:     cache,
+		store:     store,
 		tmdb:      tmdb,
 		imageBase: imageBase,
-		cacheTTL:  cacheTTL,
 	}
 }
 
@@ -58,32 +54,24 @@ func (s *TVService) getTVShows(
 	}
 
 	cacheKey := buildTVCacheKey(listType, region, language, page)
-	if data, ok, err := s.cache.Get(ctx, cacheKey); err == nil && ok {
-		var resp model.TVListResponse
-		if err := json.Unmarshal(data, &resp); err == nil {
-			return resp, nil
-		}
+	if resp, ok := s.loadFreshTV(ctx, cacheKey); ok {
+		return resp, nil
 	}
 
 	val, err, _ := s.group.Do(cacheKey, func() (any, error) {
-		if data, ok, err := s.cache.Get(ctx, cacheKey); err == nil && ok {
-			var resp model.TVListResponse
-			if err := json.Unmarshal(data, &resp); err == nil {
-				return resp, nil
-			}
+		if resp, ok := s.loadFreshTV(ctx, cacheKey); ok {
+			return resp, nil
 		}
 
 		raw, err := fetch(ctx, region, language, page)
 		if err != nil {
-			return model.TVListResponse{}, err
+			return s.loadStaleTV(ctx, cacheKey, err)
 		}
 
 		resp := model.ToTVListResponse(raw, region, s.imageBase)
-		data, err := json.Marshal(resp)
-		if err != nil {
-			return resp, nil
+		if data, err := json.Marshal(resp); err == nil {
+			_ = s.store.Set(ctx, cacheKey, data)
 		}
-		_ = s.cache.Set(ctx, cacheKey, data, s.cacheTTL)
 		return resp, nil
 	})
 	if err != nil {
@@ -93,6 +81,33 @@ func (s *TVService) getTVShows(
 	resp, ok := val.(model.TVListResponse)
 	if !ok {
 		return model.TVListResponse{}, fmt.Errorf("unexpected cache value type")
+	}
+	return resp, nil
+}
+
+func (s *TVService) loadFreshTV(ctx context.Context, key string) (model.TVListResponse, bool) {
+	data, ok, err := s.store.GetFresh(ctx, key)
+	if err != nil || !ok {
+		return model.TVListResponse{}, false
+	}
+	var resp model.TVListResponse
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return model.TVListResponse{}, false
+	}
+	return resp, true
+}
+
+func (s *TVService) loadStaleTV(ctx context.Context, key string, cause error) (model.TVListResponse, error) {
+	data, ok, err := s.store.GetStale(ctx, key)
+	if err != nil {
+		return model.TVListResponse{}, cause
+	}
+	if !ok {
+		return model.TVListResponse{}, cause
+	}
+	var resp model.TVListResponse
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return model.TVListResponse{}, cause
 	}
 	return resp, nil
 }

@@ -92,15 +92,22 @@ go run ./cmd/server
 | TMDB_BASE_URL | TMDB API 地址 | `https://api.themoviedb.org/3` |
 | TMDB_IMAGE_BASE | 图片 CDN 前缀 | `https://image.tmdb.org/t/p` |
 | REDIS_ADDR | Redis 地址 | `127.0.0.1:6379` |
-| CACHE_TTL | 缓存有效期 | `24h` |
+| CACHE_TTL | 新鲜缓存有效期 | `24h` |
+| STALE_CACHE_TTL | 过期缓存保留时间（用于降级） | `168h` |
+| TMDB_RATE_LIMIT | TMDB 全局限流（请求/秒） | `40` |
+| TMDB_RATE_BURST | TMDB 限流突发容量 | `40` |
+| TMDB_QUEUE_TIMEOUT | 排队等待 TMDB 令牌超时 | `5s` |
 | GEOIP_CACHE_TTL | IP 区域识别缓存有效期 | `24h` |
 | DEFAULT_REGION | IP 无法识别时的默认区域（含内网 IP） | `CN` |
 | HTTP_HOST | 监听地址（`0.0.0.0` 允许局域网访问） | `0.0.0.0` |
 | HTTP_PORT | 服务端口 | `8080` |
 
-## 缓存策略
+## 缓存与限流策略
 
 - 电影 Key：`tmdb:movies:{latest|popular|regional-popular}:{region}:{language}:{page}`
 - 连续剧 Key：`tmdb:tv:{on-the-air|popular|regional-popular-v2}:{region}:{language}:{page}`
-- TTL：24 小时
+- **新鲜缓存 TTL**：24 小时（`CACHE_TTL`）
+- **过期缓存保留**：7 天（`STALE_CACHE_TTL`），用于降级
+- **TMDB 全局限流**：令牌桶，默认 40 req/s（`TMDB_RATE_LIMIT`）
+- **排队超时**：默认 5 秒（`TMDB_QUEUE_TIMEOUT`），超时后返回过期缓存；无过期缓存才 502
 - 同一 key 并发 miss 时使用 singleflight 合并 TMDB 请求

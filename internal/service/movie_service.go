@@ -5,29 +5,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"golang.org/x/sync/singleflight"
 
-	"tmdb/internal/cache"
 	"tmdb/internal/model"
 	tmdbclient "tmdb/internal/tmdb"
 )
 
 type MovieService struct {
-	cache     cache.Cache
+	store     *CacheStore
 	tmdb      *tmdbclient.Client
 	imageBase string
-	cacheTTL  time.Duration
 	group     singleflight.Group
 }
 
-func NewMovieService(cache cache.Cache, tmdb *tmdbclient.Client, imageBase string, cacheTTL time.Duration) *MovieService {
+func NewMovieService(store *CacheStore, tmdb *tmdbclient.Client, imageBase string) *MovieService {
 	return &MovieService{
-		cache:     cache,
+		store:     store,
 		tmdb:      tmdb,
 		imageBase: imageBase,
-		cacheTTL:  cacheTTL,
 	}
 }
 
@@ -58,32 +54,24 @@ func (s *MovieService) getMovies(
 	}
 
 	cacheKey := buildCacheKey(listType, region, language, page)
-	if data, ok, err := s.cache.Get(ctx, cacheKey); err == nil && ok {
-		var resp model.MovieListResponse
-		if err := json.Unmarshal(data, &resp); err == nil {
-			return resp, nil
-		}
+	if resp, ok := s.loadFreshMovie(ctx, cacheKey); ok {
+		return resp, nil
 	}
 
 	val, err, _ := s.group.Do(cacheKey, func() (any, error) {
-		if data, ok, err := s.cache.Get(ctx, cacheKey); err == nil && ok {
-			var resp model.MovieListResponse
-			if err := json.Unmarshal(data, &resp); err == nil {
-				return resp, nil
-			}
+		if resp, ok := s.loadFreshMovie(ctx, cacheKey); ok {
+			return resp, nil
 		}
 
 		raw, err := fetch(ctx, region, language, page)
 		if err != nil {
-			return model.MovieListResponse{}, err
+			return s.loadStaleMovie(ctx, cacheKey, err)
 		}
 
 		resp := model.ToMovieListResponse(raw, region, s.imageBase)
-		data, err := json.Marshal(resp)
-		if err != nil {
-			return resp, nil
+		if data, err := json.Marshal(resp); err == nil {
+			_ = s.store.Set(ctx, cacheKey, data)
 		}
-		_ = s.cache.Set(ctx, cacheKey, data, s.cacheTTL)
 		return resp, nil
 	})
 	if err != nil {
@@ -93,6 +81,33 @@ func (s *MovieService) getMovies(
 	resp, ok := val.(model.MovieListResponse)
 	if !ok {
 		return model.MovieListResponse{}, fmt.Errorf("unexpected cache value type")
+	}
+	return resp, nil
+}
+
+func (s *MovieService) loadFreshMovie(ctx context.Context, key string) (model.MovieListResponse, bool) {
+	data, ok, err := s.store.GetFresh(ctx, key)
+	if err != nil || !ok {
+		return model.MovieListResponse{}, false
+	}
+	var resp model.MovieListResponse
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return model.MovieListResponse{}, false
+	}
+	return resp, true
+}
+
+func (s *MovieService) loadStaleMovie(ctx context.Context, key string, cause error) (model.MovieListResponse, error) {
+	data, ok, err := s.store.GetStale(ctx, key)
+	if err != nil {
+		return model.MovieListResponse{}, cause
+	}
+	if !ok {
+		return model.MovieListResponse{}, cause
+	}
+	var resp model.MovieListResponse
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return model.MovieListResponse{}, cause
 	}
 	return resp, nil
 }

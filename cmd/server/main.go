@@ -32,9 +32,11 @@ func main() {
 		log.Fatalf("redis ping failed: %v", err)
 	}
 
-	tmdbClient := tmdbclient.NewClient(cfg.TMDBBaseURL, cfg.TMDBAccessToken, cfg.TMDBAPIKey)
-	movieService := service.NewMovieService(redisCache, tmdbClient, cfg.TMDBImageBase, cfg.CacheTTL)
-	tvService := service.NewTVService(redisCache, tmdbClient, cfg.TMDBImageBase, cfg.CacheTTL)
+	tmdbLimiter := tmdbclient.NewRateLimiter(cfg.TMDBRateLimit, cfg.TMDBRateBurst, cfg.TMDBQueueTimeout)
+	tmdbClient := tmdbclient.NewClient(cfg.TMDBBaseURL, cfg.TMDBAccessToken, cfg.TMDBAPIKey, tmdbLimiter)
+	cacheStore := service.NewCacheStore(redisCache, cfg.CacheTTL, cfg.StaleCacheTTL)
+	movieService := service.NewMovieService(cacheStore, tmdbClient, cfg.TMDBImageBase)
+	tvService := service.NewTVService(cacheStore, tmdbClient, cfg.TMDBImageBase)
 	geoIPResolver := geoip.NewResolver(redisCache, cfg.DefaultRegion, cfg.GeoIPCacheTTL)
 	router := api.NewRouter(movieService, tvService, geoIPResolver)
 
@@ -45,7 +47,9 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("server listening on http://%s", addr)
+	log.Printf("server listening on http://%s", addr)
+		log.Printf("  tmdb rate limit: %.0f req/s, queue timeout: %s, stale cache: %s",
+			cfg.TMDBRateLimit, cfg.TMDBQueueTimeout, cfg.StaleCacheTTL)
 		for _, ip := range listAccessibleIPs(cfg.HTTPPort) {
 			log.Printf("  accessible at http://%s", ip)
 		}

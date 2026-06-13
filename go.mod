@@ -7,6 +7,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/redis/go-redis/v9 v9.7.0
 	golang.org/x/sync v0.10.0
+	golang.org/x/time v0.6.0
 )
 
 require (

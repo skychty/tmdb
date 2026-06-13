@@ -18,13 +18,15 @@ type Client struct {
 	accessToken string
 	apiKey      string
 	httpClient  *http.Client
+	limiter     *RateLimiter
 }
 
-func NewClient(baseURL, accessToken, apiKey string) *Client {
+func NewClient(baseURL, accessToken, apiKey string, limiter *RateLimiter) *Client {
 	return &Client{
 		baseURL:     baseURL,
 		accessToken: accessToken,
 		apiKey:      apiKey,
+		limiter:     limiter,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -83,6 +85,10 @@ func (c *Client) fetchMovieList(ctx context.Context, path, region, language stri
 }
 
 func (c *Client) fetchFromURL(ctx context.Context, endpoint string) (model.TMDBMovieListResponse, error) {
+	if err := c.limiter.Acquire(ctx); err != nil {
+		return model.TMDBMovieListResponse{}, err
+	}
+
 	var lastErr error
 	for attempt := 0; attempt < 3; attempt++ {
 		if attempt > 0 {
@@ -178,6 +184,10 @@ func (c *Client) fetchTVList(ctx context.Context, path, region, language string,
 }
 
 func (c *Client) fetchTVFromURL(ctx context.Context, endpoint string) (model.TMDBTVListResponse, error) {
+	if err := c.limiter.Acquire(ctx); err != nil {
+		return model.TMDBTVListResponse{}, err
+	}
+
 	var lastErr error
 	for attempt := 0; attempt < 3; attempt++ {
 		if attempt > 0 {

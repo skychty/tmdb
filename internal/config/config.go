@@ -15,9 +15,13 @@ type Config struct {
 	TMDBAPIKey      string
 	TMDBBaseURL     string
 	TMDBImageBase   string
-	RedisAddr       string
-	CacheTTL        time.Duration
-	HTTPHost        string
+	RedisAddr         string
+	CacheTTL          time.Duration
+	StaleCacheTTL     time.Duration
+	TMDBRateLimit     float64
+	TMDBRateBurst     int
+	TMDBQueueTimeout  time.Duration
+	HTTPHost          string
 	HTTPPort        int
 	DefaultRegion   string
 	GeoIPCacheTTL   time.Duration
@@ -43,6 +47,23 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid CACHE_TTL %q: %w", ttlStr, err)
 	}
 	cfg.CacheTTL = ttl
+
+	staleTTLStr := getEnv("STALE_CACHE_TTL", "168h")
+	staleTTL, err := time.ParseDuration(staleTTLStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid STALE_CACHE_TTL %q: %w", staleTTLStr, err)
+	}
+	cfg.StaleCacheTTL = staleTTL
+
+	queueTimeoutStr := getEnv("TMDB_QUEUE_TIMEOUT", "5s")
+	queueTimeout, err := time.ParseDuration(queueTimeoutStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid TMDB_QUEUE_TIMEOUT %q: %w", queueTimeoutStr, err)
+	}
+	cfg.TMDBQueueTimeout = queueTimeout
+
+	cfg.TMDBRateLimit = getEnvFloat("TMDB_RATE_LIMIT", 40)
+	cfg.TMDBRateBurst = getEnvInt("TMDB_RATE_BURST", int(cfg.TMDBRateLimit))
 
 	geoIPCacheStr := getEnv("GEOIP_CACHE_TTL", "24h")
 	geoIPCacheTTL, err := time.ParseDuration(geoIPCacheStr)
@@ -71,6 +92,18 @@ func getEnvInt(key string, fallback int) int {
 		return fallback
 	}
 	n, err := strconv.Atoi(v)
+	if err != nil {
+		return fallback
+	}
+	return n
+}
+
+func getEnvFloat(key string, fallback float64) float64 {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.ParseFloat(v, 64)
 	if err != nil {
 		return fallback
 	}
