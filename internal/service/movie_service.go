@@ -29,16 +29,16 @@ func NewMovieService(store *CacheStore, tmdb *tmdbclient.Client, trailers *Trail
 	}
 }
 
-func (s *MovieService) GetLatestMovies(ctx context.Context, region, language string, page int) (model.MovieListResponse, error) {
-	return s.getMovies(ctx, "latest", region, language, page, s.tmdb.NowPlaying)
+func (s *MovieService) GetLatestMovies(ctx context.Context, region, language string, page, limit int) (model.MovieListResponse, error) {
+	return s.getMovies(ctx, "latest", region, language, page, limit, s.tmdb.NowPlaying)
 }
 
-func (s *MovieService) GetPopularMovies(ctx context.Context, region, language string, page int) (model.MovieListResponse, error) {
-	return s.getMovies(ctx, "popular", region, language, page, s.tmdb.Popular)
+func (s *MovieService) GetPopularMovies(ctx context.Context, region, language string, page, limit int) (model.MovieListResponse, error) {
+	return s.getMovies(ctx, "popular", region, language, page, limit, s.tmdb.Popular)
 }
 
-func (s *MovieService) GetRegionalPopularMovies(ctx context.Context, region, language string, page int) (model.MovieListResponse, error) {
-	return s.getMovies(ctx, "regional-popular", region, language, page, s.tmdb.DiscoverRegionalPopular)
+func (s *MovieService) GetRegionalPopularMovies(ctx context.Context, region, language string, page, limit int) (model.MovieListResponse, error) {
+	return s.getMovies(ctx, "regional-popular", region, language, page, limit, s.tmdb.DiscoverRegionalPopular)
 }
 
 type fetchFunc func(ctx context.Context, region, language string, page int) (model.TMDBMovieListResponse, error)
@@ -46,7 +46,7 @@ type fetchFunc func(ctx context.Context, region, language string, page int) (mod
 func (s *MovieService) getMovies(
 	ctx context.Context,
 	listType, region, language string,
-	page int,
+	page, limit int,
 	fetch fetchFunc,
 ) (model.MovieListResponse, error) {
 	region = strings.ToUpper(strings.TrimSpace(region))
@@ -54,26 +54,24 @@ func (s *MovieService) getMovies(
 	if language == "" {
 		language = "en-US"
 	}
+	limit = normalizePageLimit(limit)
 
 	cacheKey := buildCacheKey(listType, region, language, page)
 	if resp, ok := s.loadFreshMovie(ctx, cacheKey); ok {
-		resp.Results = s.trailers.EnrichMovies(ctx, language, resp.Results)
-		return resp, nil
+		return s.finalizeMovieResponse(ctx, resp, language, limit), nil
 	}
 
 	val, err, _ := s.group.Do(cacheKey, func() (any, error) {
 		if resp, ok := s.loadFreshMovie(ctx, cacheKey); ok {
-			resp.Results = s.trailers.EnrichMovies(ctx, language, resp.Results)
 			return resp, nil
 		}
 
 		raw, err := fetch(ctx, region, language, page)
 		if err != nil {
-			return s.loadStaleMovie(ctx, cacheKey, language, err)
+			return s.loadStaleMovieRaw(ctx, cacheKey, err)
 		}
 
 		resp := model.ToMovieListResponse(raw, region, s.imageBase)
-		resp.Results = s.trailers.EnrichMovies(ctx, language, resp.Results)
 		if data, err := json.Marshal(resp); err == nil {
 			_ = s.store.Set(ctx, cacheKey, data)
 		}
@@ -87,7 +85,16 @@ func (s *MovieService) getMovies(
 	if !ok {
 		return model.MovieListResponse{}, fmt.Errorf("unexpected cache value type")
 	}
-	return resp, nil
+	return s.finalizeMovieResponse(ctx, resp, language, limit), nil
+}
+
+func (s *MovieService) finalizeMovieResponse(ctx context.Context, resp model.MovieListResponse, language string, limit int) model.MovieListResponse {
+	limit = normalizePageLimit(limit)
+	if len(resp.Results) > limit {
+		resp.Results = resp.Results[:limit]
+	}
+	resp.Results = s.trailers.EnrichMovies(ctx, language, resp.Results)
+	return resp
 }
 
 func (s *MovieService) loadFreshMovie(ctx context.Context, key string) (model.MovieListResponse, bool) {
@@ -102,7 +109,7 @@ func (s *MovieService) loadFreshMovie(ctx context.Context, key string) (model.Mo
 	return resp, true
 }
 
-func (s *MovieService) loadStaleMovie(ctx context.Context, key, language string, cause error) (model.MovieListResponse, error) {
+func (s *MovieService) loadStaleMovieRaw(ctx context.Context, key string, cause error) (model.MovieListResponse, error) {
 	data, ok, err := s.store.GetStale(ctx, key)
 	if err != nil {
 		return model.MovieListResponse{}, cause
@@ -114,7 +121,6 @@ func (s *MovieService) loadStaleMovie(ctx context.Context, key, language string,
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return model.MovieListResponse{}, cause
 	}
-	resp.Results = s.trailers.EnrichMovies(ctx, language, resp.Results)
 	return resp, nil
 }
 

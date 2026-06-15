@@ -29,16 +29,16 @@ func NewTVService(store *CacheStore, tmdb *tmdbclient.Client, trailers *TrailerS
 	}
 }
 
-func (s *TVService) GetOnTheAirTV(ctx context.Context, region, language string, page int) (model.TVListResponse, error) {
-	return s.getTVShows(ctx, "on-the-air", region, language, page, s.tmdb.OnTheAir)
+func (s *TVService) GetOnTheAirTV(ctx context.Context, region, language string, page, limit int) (model.TVListResponse, error) {
+	return s.getTVShows(ctx, "on-the-air", region, language, page, limit, s.tmdb.OnTheAir)
 }
 
-func (s *TVService) GetPopularTV(ctx context.Context, region, language string, page int) (model.TVListResponse, error) {
-	return s.getTVShows(ctx, "popular", region, language, page, s.tmdb.TVPopular)
+func (s *TVService) GetPopularTV(ctx context.Context, region, language string, page, limit int) (model.TVListResponse, error) {
+	return s.getTVShows(ctx, "popular", region, language, page, limit, s.tmdb.TVPopular)
 }
 
-func (s *TVService) GetRegionalPopularTV(ctx context.Context, region, language string, page int) (model.TVListResponse, error) {
-	return s.getTVShows(ctx, "regional-popular-v2", region, language, page, s.tmdb.DiscoverRegionalPopularTV)
+func (s *TVService) GetRegionalPopularTV(ctx context.Context, region, language string, page, limit int) (model.TVListResponse, error) {
+	return s.getTVShows(ctx, "regional-popular-v2", region, language, page, limit, s.tmdb.DiscoverRegionalPopularTV)
 }
 
 type fetchTVFunc func(ctx context.Context, region, language string, page int) (model.TMDBTVListResponse, error)
@@ -46,7 +46,7 @@ type fetchTVFunc func(ctx context.Context, region, language string, page int) (m
 func (s *TVService) getTVShows(
 	ctx context.Context,
 	listType, region, language string,
-	page int,
+	page, limit int,
 	fetch fetchTVFunc,
 ) (model.TVListResponse, error) {
 	region = strings.ToUpper(strings.TrimSpace(region))
@@ -54,26 +54,24 @@ func (s *TVService) getTVShows(
 	if language == "" {
 		language = "en-US"
 	}
+	limit = normalizePageLimit(limit)
 
 	cacheKey := buildTVCacheKey(listType, region, language, page)
 	if resp, ok := s.loadFreshTV(ctx, cacheKey); ok {
-		resp.Results = s.trailers.EnrichTVShows(ctx, language, resp.Results)
-		return resp, nil
+		return s.finalizeTVResponse(ctx, resp, language, limit), nil
 	}
 
 	val, err, _ := s.group.Do(cacheKey, func() (any, error) {
 		if resp, ok := s.loadFreshTV(ctx, cacheKey); ok {
-			resp.Results = s.trailers.EnrichTVShows(ctx, language, resp.Results)
 			return resp, nil
 		}
 
 		raw, err := fetch(ctx, region, language, page)
 		if err != nil {
-			return s.loadStaleTV(ctx, cacheKey, language, err)
+			return s.loadStaleTVRaw(ctx, cacheKey, err)
 		}
 
 		resp := model.ToTVListResponse(raw, region, s.imageBase)
-		resp.Results = s.trailers.EnrichTVShows(ctx, language, resp.Results)
 		if data, err := json.Marshal(resp); err == nil {
 			_ = s.store.Set(ctx, cacheKey, data)
 		}
@@ -87,7 +85,16 @@ func (s *TVService) getTVShows(
 	if !ok {
 		return model.TVListResponse{}, fmt.Errorf("unexpected cache value type")
 	}
-	return resp, nil
+	return s.finalizeTVResponse(ctx, resp, language, limit), nil
+}
+
+func (s *TVService) finalizeTVResponse(ctx context.Context, resp model.TVListResponse, language string, limit int) model.TVListResponse {
+	limit = normalizePageLimit(limit)
+	if len(resp.Results) > limit {
+		resp.Results = resp.Results[:limit]
+	}
+	resp.Results = s.trailers.EnrichTVShows(ctx, language, resp.Results)
+	return resp
 }
 
 func (s *TVService) loadFreshTV(ctx context.Context, key string) (model.TVListResponse, bool) {
@@ -102,7 +109,7 @@ func (s *TVService) loadFreshTV(ctx context.Context, key string) (model.TVListRe
 	return resp, true
 }
 
-func (s *TVService) loadStaleTV(ctx context.Context, key, language string, cause error) (model.TVListResponse, error) {
+func (s *TVService) loadStaleTVRaw(ctx context.Context, key string, cause error) (model.TVListResponse, error) {
 	data, ok, err := s.store.GetStale(ctx, key)
 	if err != nil {
 		return model.TVListResponse{}, cause
@@ -114,7 +121,6 @@ func (s *TVService) loadStaleTV(ctx context.Context, key, language string, cause
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return model.TVListResponse{}, cause
 	}
-	resp.Results = s.trailers.EnrichTVShows(ctx, language, resp.Results)
 	return resp, nil
 }
 

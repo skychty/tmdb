@@ -27,6 +27,7 @@ https://tmdb.blogsite.org
 | `region` | string | 否 | 自动识别 | ISO 3166-1 两位国家/地区代码，如 `CN`、`US`、`JP`、`GB`（英国请用 `GB`，不要用 `UK`） |
 | `language` | string | 否 | `en-US` | 语言代码，控制标题、简介等翻译，如 `en-US`、`zh-CN`、`ja-JP` |
 | `page` | int | 否 | `1` | 页码，从 1 开始 |
+| `limit` | int | 否 | `20` | 每页返回条数上限，最大 `20`；末页不足 `20` 条时全部返回 |
 
 **region 自动识别规则（按优先级）：**
 
@@ -67,6 +68,11 @@ https://tmdb.blogsite.org
 - 新鲜缓存默认 **24 小时**（`CACHE_TTL`）
 - 过期缓存保留 **7 天**（`STALE_CACHE_TTL`），在 TMDB 限流排队超时或上游失败时用于降级返回
 - 降级成功时仍返回 **200**，数据可能来自过期缓存
+
+**分页与预告片：**
+
+- TMDB 列表每页最多 **20** 条；`limit` 可进一步缩小（如 `limit=10`），仅对返回条数拉取 `trailer_url`
+- 末页不足 20 条时，`results` 返回实际条数（不会凑满 20）
 
 ---
 

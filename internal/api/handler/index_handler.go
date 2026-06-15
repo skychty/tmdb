@@ -45,6 +45,7 @@ func Index(c *gin.Context) {
     <li><code>region</code>：可选，国家/地区代码，如 CN、US；未指定时根据客户端 IP 自动识别</li>
     <li><code>language</code>：可选，默认 en-US</li>
     <li><code>page</code>：可选，默认 1</li>
+    <li><code>limit</code>：可选，每页条数上限，默认 20，最大 20</li>
   </ul>
 </body>
 </html>`, host)))
