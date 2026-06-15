@@ -42,8 +42,12 @@ func PickLogoURL(logos []TMDBLogo, language, imageBase string) string {
 		return candidates[i].VoteAverage > candidates[j].VoteAverage
 	})
 
-	size := "original"
-	return buildImageURL(imageBase, size, candidates[0].FilePath)
+	chosen := candidates[0]
+	size := "w185"
+	if isSVGLogo(chosen) {
+		size = "original"
+	}
+	return buildImageURL(imageBase, size, chosen.FilePath)
 }
 
 func languagePrefix(language string) string {
@@ -55,6 +59,13 @@ func languagePrefix(language string) string {
 		return strings.ToLower(language[:idx])
 	}
 	return strings.ToLower(language)
+}
+
+func isSVGLogo(logo TMDBLogo) bool {
+	if strings.EqualFold(strings.TrimSpace(logo.FileType), "svg") {
+		return true
+	}
+	return strings.HasSuffix(strings.ToLower(strings.TrimSpace(logo.FilePath)), ".svg")
 }
 
 func logoLanguageRank(iso639 *string, langPrefix string) int {

@@ -219,14 +219,14 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 | `original_title` | string | 原始语言标题 |
 | `overview` | string | 简介/剧情概要 |
 | `release_date` | string | 上映日期，格式 `YYYY-MM-DD`；无数据时为空字符串 |
-| `poster_url` | string | **竖版海报**完整 URL（宽 500px）；无海报时为空字符串 |
+| `poster_url` | string | **竖版海报**完整 URL（宽 300px）；无海报时为空字符串 |
 | `backdrop_url` | string | **横版背景图**完整 URL（原始尺寸）；无图时为空字符串 |
 | `vote_average` | float | 平均评分（0–10） |
 | `vote_count` | int | 评分人数 |
 | `popularity` | float | TMDB 热度值（越大越热门） |
 | `genre_ids` | int[] | 类型 ID 数组，见 [类型 ID 对照](#类型-id-对照) |
 | `trailer_url` | string | 官方预告片 YouTube 播放链接；无预告片时为空字符串 |
-| `logo_url` | string | 标题艺术 Logo 完整 URL（透明底 PNG/SVG，`original` 尺寸）；无 Logo 时为空字符串 |
+| `logo_url` | string | 标题艺术 Logo 完整 URL（透明底 PNG 为 `w185`，SVG 为 `original`）；无 Logo 时为空字符串 |
 
 **图片说明：**
 
@@ -252,7 +252,7 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 | `original_name` | string | 原始语言剧名 |
 | `overview` | string | 简介/剧情概要 |
 | `first_air_date` | string | 首播日期，格式 `YYYY-MM-DD`；无数据时为空字符串 |
-| `poster_url` | string | **竖版海报**完整 URL（宽 500px） |
+| `poster_url` | string | **竖版海报**完整 URL（宽 300px） |
 | `backdrop_url` | string | **横版背景图**完整 URL（原始尺寸） |
 | `vote_average` | float | 平均评分（0–10） |
 | `vote_count` | int | 评分人数 |
@@ -260,7 +260,7 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 | `genre_ids` | int[] | 类型 ID 数组 |
 | `origin_country` | string[] | 制作国家/地区代码数组，如 `["US"]`、`["KR"]`、`["CN"]` |
 | `trailer_url` | string | 官方预告片 YouTube 播放链接；无预告片时为空字符串 |
-| `logo_url` | string | 标题艺术 Logo 完整 URL（透明底 PNG/SVG，`original` 尺寸）；无 Logo 时为空字符串 |
+| `logo_url` | string | 标题艺术 Logo 完整 URL（透明底 PNG 为 `w185`，SVG 为 `original`）；无 Logo 时为空字符串 |
 
 ---
 
@@ -282,14 +282,14 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
       "original_title": "The Mandalorian and Grogu",
       "overview": "“曼达洛人”丁·贾伦和“尤达宝宝”古古的星际冒险全面升级……",
       "release_date": "2026-05-22",
-      "poster_url": "https://image.tmdb.org/t/p/w500/cafHjxEvhslX9MpBMxmPWxC5GWB.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w300/cafHjxEvhslX9MpBMxmPWxC5GWB.jpg",
       "backdrop_url": "https://image.tmdb.org/t/p/original/6zg7A9ICOthNR2TSXlT51KvXrsA.jpg",
       "vote_average": 6.8,
       "vote_count": 437,
       "popularity": 349.3,
       "genre_ids": [28, 12, 878],
       "trailer_url": "https://www.youtube.com/watch?v=example",
-      "logo_url": "https://image.tmdb.org/t/p/original/example.png"
+      "logo_url": "https://image.tmdb.org/t/p/w185/example.png"
     }
   ]
 }
@@ -311,7 +311,7 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
       "original_name": "クラスで2番目に可愛い女の子と友だちになった",
       "overview": "……",
       "first_air_date": "2026-04-01",
-      "poster_url": "https://image.tmdb.org/t/p/w500/xxx.jpg",
+      "poster_url": "https://image.tmdb.org/t/p/w300/xxx.jpg",
       "backdrop_url": "https://image.tmdb.org/t/p/original/xxx.jpg",
       "vote_average": 8.5,
       "vote_count": 120,
@@ -319,7 +319,7 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
       "genre_ids": [16, 35],
       "origin_country": ["JP"],
       "trailer_url": "https://www.youtube.com/watch?v=example",
-      "logo_url": "https://image.tmdb.org/t/p/original/example.png"
+      "logo_url": "https://image.tmdb.org/t/p/w185/example.png"
     }
   ]
 }

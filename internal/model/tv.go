@@ -76,7 +76,7 @@ func ToTVShow(item TMDBTV, imageBase string) TVShow {
 		OriginalName:  item.OriginalName,
 		Overview:      item.Overview,
 		FirstAirDate:  item.FirstAirDate,
-		PosterURL:     buildImageURL(imageBase, "w500", item.PosterPath),
+		PosterURL:     buildImageURL(imageBase, "w300", item.PosterPath),
 		BackdropURL:   buildImageURL(imageBase, "original", item.BackdropPath),
 		VoteAverage:   item.VoteAverage,
 		VoteCount:     item.VoteCount,

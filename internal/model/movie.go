@@ -75,7 +75,7 @@ func ToMovie(item TMDBMovie, imageBase string) Movie {
 		OriginalTitle: item.OriginalTitle,
 		Overview:      item.Overview,
 		ReleaseDate:   item.ReleaseDate,
-		PosterURL:     buildImageURL(imageBase, "w500", item.PosterPath),
+		PosterURL:     buildImageURL(imageBase, "w300", item.PosterPath),
 		BackdropURL:   buildImageURL(imageBase, "original", item.BackdropPath),
 		VoteAverage:   item.VoteAverage,
 		VoteCount:     item.VoteCount,
