@@ -238,6 +238,7 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 
 - `trailer_url` 与 `logo_url` 来自 TMDB 详情接口 `append_to_response=videos,images`（每个 ID **一次**请求）
 - 预告片优先 YouTube 官方 `Trailer`，其次 `Teaser`
+- `trailer_url` 优先使用请求 `language` 对应的视频；该语言无预告片时回退至 `en-US`（跨语言共用 `en-US` 子缓存，减少重复请求）
 - Logo 优先匹配 `language` 对应语言，其次无语言标记的通用 Logo
 - 受 `language` 参数影响；无数据时对应字段为空字符串
 
