@@ -27,6 +27,7 @@ type TVShow struct {
 	Popularity    float64  `json:"popularity"`
 	GenreIDs      []int    `json:"genre_ids"`
 	OriginCountry []string `json:"origin_country"`
+	TrailerURL    string   `json:"trailer_url"`
 }
 
 type TMDBTVListResponse struct {

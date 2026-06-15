@@ -219,12 +219,19 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 | `vote_count` | int | 评分人数 |
 | `popularity` | float | TMDB 热度值（越大越热门） |
 | `genre_ids` | int[] | 类型 ID 数组，见 [类型 ID 对照](#类型-id-对照) |
+| `trailer_url` | string | 官方预告片 YouTube 播放链接；无预告片时为空字符串 |
 
 **图片说明：**
 
 - `poster_url`：竖向海报（约 2:3）
 - `backdrop_url`：横向宽图（约 16:9），适合横幅/背景展示
 - TMDB 列表接口不提供单独的「横版海报」字段
+
+**预告片说明：**
+
+- `trailer_url` 来自 TMDB `/movie/{id}/videos` 或 `/tv/{id}/videos`
+- 优先选取 YouTube 上的官方 `Trailer`，其次 `Teaser`；无预告片时为空字符串
+- 受 `language` 参数影响（与标题翻译语言一致）
 
 ---
 
@@ -244,6 +251,7 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 | `popularity` | float | TMDB 热度值 |
 | `genre_ids` | int[] | 类型 ID 数组 |
 | `origin_country` | string[] | 制作国家/地区代码数组，如 `["US"]`、`["KR"]`、`["CN"]` |
+| `trailer_url` | string | 官方预告片 YouTube 播放链接；无预告片时为空字符串 |
 
 ---
 
@@ -270,7 +278,8 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
       "vote_average": 6.8,
       "vote_count": 437,
       "popularity": 349.3,
-      "genre_ids": [28, 12, 878]
+      "genre_ids": [28, 12, 878],
+      "trailer_url": "https://www.youtube.com/watch?v=example"
     }
   ]
 }
@@ -298,7 +307,8 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
       "vote_count": 120,
       "popularity": 98.2,
       "genre_ids": [16, 35],
-      "origin_country": ["JP"]
+      "origin_country": ["JP"],
+      "trailer_url": "https://www.youtube.com/watch?v=example"
     }
   ]
 }

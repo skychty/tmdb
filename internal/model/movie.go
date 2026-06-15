@@ -27,6 +27,7 @@ type Movie struct {
 	VoteCount     int     `json:"vote_count"`
 	Popularity    float64 `json:"popularity"`
 	GenreIDs      []int   `json:"genre_ids"`
+	TrailerURL    string  `json:"trailer_url"`
 }
 
 type TMDBMovieListResponse struct {

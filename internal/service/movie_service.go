@@ -15,14 +15,16 @@ import (
 type MovieService struct {
 	store     *CacheStore
 	tmdb      *tmdbclient.Client
+	trailers  *TrailerService
 	imageBase string
 	group     singleflight.Group
 }
 
-func NewMovieService(store *CacheStore, tmdb *tmdbclient.Client, imageBase string) *MovieService {
+func NewMovieService(store *CacheStore, tmdb *tmdbclient.Client, trailers *TrailerService, imageBase string) *MovieService {
 	return &MovieService{
 		store:     store,
 		tmdb:      tmdb,
+		trailers:  trailers,
 		imageBase: imageBase,
 	}
 }
@@ -55,20 +57,23 @@ func (s *MovieService) getMovies(
 
 	cacheKey := buildCacheKey(listType, region, language, page)
 	if resp, ok := s.loadFreshMovie(ctx, cacheKey); ok {
+		resp.Results = s.trailers.EnrichMovies(ctx, language, resp.Results)
 		return resp, nil
 	}
 
 	val, err, _ := s.group.Do(cacheKey, func() (any, error) {
 		if resp, ok := s.loadFreshMovie(ctx, cacheKey); ok {
+			resp.Results = s.trailers.EnrichMovies(ctx, language, resp.Results)
 			return resp, nil
 		}
 
 		raw, err := fetch(ctx, region, language, page)
 		if err != nil {
-			return s.loadStaleMovie(ctx, cacheKey, err)
+			return s.loadStaleMovie(ctx, cacheKey, language, err)
 		}
 
 		resp := model.ToMovieListResponse(raw, region, s.imageBase)
+		resp.Results = s.trailers.EnrichMovies(ctx, language, resp.Results)
 		if data, err := json.Marshal(resp); err == nil {
 			_ = s.store.Set(ctx, cacheKey, data)
 		}
@@ -97,7 +102,7 @@ func (s *MovieService) loadFreshMovie(ctx context.Context, key string) (model.Mo
 	return resp, true
 }
 
-func (s *MovieService) loadStaleMovie(ctx context.Context, key string, cause error) (model.MovieListResponse, error) {
+func (s *MovieService) loadStaleMovie(ctx context.Context, key, language string, cause error) (model.MovieListResponse, error) {
 	data, ok, err := s.store.GetStale(ctx, key)
 	if err != nil {
 		return model.MovieListResponse{}, cause
@@ -109,6 +114,7 @@ func (s *MovieService) loadStaleMovie(ctx context.Context, key string, cause err
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return model.MovieListResponse{}, cause
 	}
+	resp.Results = s.trailers.EnrichMovies(ctx, language, resp.Results)
 	return resp, nil
 }
 

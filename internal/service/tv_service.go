@@ -15,14 +15,16 @@ import (
 type TVService struct {
 	store     *CacheStore
 	tmdb      *tmdbclient.Client
+	trailers  *TrailerService
 	imageBase string
 	group     singleflight.Group
 }
 
-func NewTVService(store *CacheStore, tmdb *tmdbclient.Client, imageBase string) *TVService {
+func NewTVService(store *CacheStore, tmdb *tmdbclient.Client, trailers *TrailerService, imageBase string) *TVService {
 	return &TVService{
 		store:     store,
 		tmdb:      tmdb,
+		trailers:  trailers,
 		imageBase: imageBase,
 	}
 }
@@ -55,20 +57,23 @@ func (s *TVService) getTVShows(
 
 	cacheKey := buildTVCacheKey(listType, region, language, page)
 	if resp, ok := s.loadFreshTV(ctx, cacheKey); ok {
+		resp.Results = s.trailers.EnrichTVShows(ctx, language, resp.Results)
 		return resp, nil
 	}
 
 	val, err, _ := s.group.Do(cacheKey, func() (any, error) {
 		if resp, ok := s.loadFreshTV(ctx, cacheKey); ok {
+			resp.Results = s.trailers.EnrichTVShows(ctx, language, resp.Results)
 			return resp, nil
 		}
 
 		raw, err := fetch(ctx, region, language, page)
 		if err != nil {
-			return s.loadStaleTV(ctx, cacheKey, err)
+			return s.loadStaleTV(ctx, cacheKey, language, err)
 		}
 
 		resp := model.ToTVListResponse(raw, region, s.imageBase)
+		resp.Results = s.trailers.EnrichTVShows(ctx, language, resp.Results)
 		if data, err := json.Marshal(resp); err == nil {
 			_ = s.store.Set(ctx, cacheKey, data)
 		}
@@ -97,7 +102,7 @@ func (s *TVService) loadFreshTV(ctx context.Context, key string) (model.TVListRe
 	return resp, true
 }
 
-func (s *TVService) loadStaleTV(ctx context.Context, key string, cause error) (model.TVListResponse, error) {
+func (s *TVService) loadStaleTV(ctx context.Context, key, language string, cause error) (model.TVListResponse, error) {
 	data, ok, err := s.store.GetStale(ctx, key)
 	if err != nil {
 		return model.TVListResponse{}, cause
@@ -109,6 +114,7 @@ func (s *TVService) loadStaleTV(ctx context.Context, key string, cause error) (m
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return model.TVListResponse{}, cause
 	}
+	resp.Results = s.trailers.EnrichTVShows(ctx, language, resp.Results)
 	return resp, nil
 }
 

@@ -35,8 +35,9 @@ func main() {
 	tmdbLimiter := tmdbclient.NewRateLimiter(cfg.TMDBRateLimit, cfg.TMDBRateBurst, cfg.TMDBQueueTimeout)
 	tmdbClient := tmdbclient.NewClient(cfg.TMDBBaseURL, cfg.TMDBAccessToken, cfg.TMDBAPIKey, tmdbLimiter)
 	cacheStore := service.NewCacheStore(redisCache, cfg.CacheTTL, cfg.StaleCacheTTL)
-	movieService := service.NewMovieService(cacheStore, tmdbClient, cfg.TMDBImageBase)
-	tvService := service.NewTVService(cacheStore, tmdbClient, cfg.TMDBImageBase)
+	trailerService := service.NewTrailerService(cacheStore, tmdbClient)
+	movieService := service.NewMovieService(cacheStore, tmdbClient, trailerService, cfg.TMDBImageBase)
+	tvService := service.NewTVService(cacheStore, tmdbClient, trailerService, cfg.TMDBImageBase)
 	geoIPResolver, err := geoip.NewResolver(cfg.GeoIPDBPath, cfg.DefaultRegion, redisCache, cfg.GeoIPCacheTTL)
 	if err != nil {
 		log.Fatalf("geoip init: %v", err)
