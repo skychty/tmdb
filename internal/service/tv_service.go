@@ -15,16 +15,16 @@ import (
 type TVService struct {
 	store     *CacheStore
 	tmdb      *tmdbclient.Client
-	trailers  *TrailerService
+	trailers  *EnrichmentService
 	imageBase string
 	group     singleflight.Group
 }
 
-func NewTVService(store *CacheStore, tmdb *tmdbclient.Client, trailers *TrailerService, imageBase string) *TVService {
+func NewTVService(store *CacheStore, tmdb *tmdbclient.Client, enrichment *EnrichmentService, imageBase string) *TVService {
 	return &TVService{
 		store:     store,
 		tmdb:      tmdb,
-		trailers:  trailers,
+		trailers:  enrichment,
 		imageBase: imageBase,
 	}
 }

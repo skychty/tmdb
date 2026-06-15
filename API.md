@@ -71,7 +71,7 @@ https://tmdb.blogsite.org
 
 **分页与预告片：**
 
-- TMDB 列表每页最多 **20** 条；`limit` 可进一步缩小（如 `limit=10`），仅对返回条数拉取 `trailer_url`
+- TMDB 列表每页最多 **20** 条；`limit` 可进一步缩小（如 `limit=10`），仅对返回条数拉取 `trailer_url` / `logo_url`
 - 末页不足 20 条时，`results` 返回实际条数（不会凑满 20）
 
 ---
@@ -226,6 +226,7 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 | `popularity` | float | TMDB 热度值（越大越热门） |
 | `genre_ids` | int[] | 类型 ID 数组，见 [类型 ID 对照](#类型-id-对照) |
 | `trailer_url` | string | 官方预告片 YouTube 播放链接；无预告片时为空字符串 |
+| `logo_url` | string | 标题艺术 Logo 完整 URL（透明底 PNG/SVG，`original` 尺寸）；无 Logo 时为空字符串 |
 
 **图片说明：**
 
@@ -233,11 +234,12 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 - `backdrop_url`：横向宽图（约 16:9），适合横幅/背景展示
 - TMDB 列表接口不提供单独的「横版海报」字段
 
-**预告片说明：**
+**预告片与 Logo 说明：**
 
-- `trailer_url` 来自 TMDB `/movie/{id}/videos` 或 `/tv/{id}/videos`
-- 优先选取 YouTube 上的官方 `Trailer`，其次 `Teaser`；无预告片时为空字符串
-- 受 `language` 参数影响（与标题翻译语言一致）
+- `trailer_url` 与 `logo_url` 来自 TMDB 详情接口 `append_to_response=videos,images`（每个 ID **一次**请求）
+- 预告片优先 YouTube 官方 `Trailer`，其次 `Teaser`
+- Logo 优先匹配 `language` 对应语言，其次无语言标记的通用 Logo
+- 受 `language` 参数影响；无数据时对应字段为空字符串
 
 ---
 
@@ -258,6 +260,7 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
 | `genre_ids` | int[] | 类型 ID 数组 |
 | `origin_country` | string[] | 制作国家/地区代码数组，如 `["US"]`、`["KR"]`、`["CN"]` |
 | `trailer_url` | string | 官方预告片 YouTube 播放链接；无预告片时为空字符串 |
+| `logo_url` | string | 标题艺术 Logo 完整 URL（透明底 PNG/SVG，`original` 尺寸）；无 Logo 时为空字符串 |
 
 ---
 
@@ -285,7 +288,8 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
       "vote_count": 437,
       "popularity": 349.3,
       "genre_ids": [28, 12, 878],
-      "trailer_url": "https://www.youtube.com/watch?v=example"
+      "trailer_url": "https://www.youtube.com/watch?v=example",
+      "logo_url": "https://image.tmdb.org/t/p/original/example.png"
     }
   ]
 }
@@ -314,7 +318,8 @@ GET /api/v1/tv/regional-popular?region=JP&language=ja-JP&page=1
       "popularity": 98.2,
       "genre_ids": [16, 35],
       "origin_country": ["JP"],
-      "trailer_url": "https://www.youtube.com/watch?v=example"
+      "trailer_url": "https://www.youtube.com/watch?v=example",
+      "logo_url": "https://image.tmdb.org/t/p/original/example.png"
     }
   ]
 }

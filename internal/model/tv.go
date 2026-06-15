@@ -28,6 +28,7 @@ type TVShow struct {
 	GenreIDs      []int    `json:"genre_ids"`
 	OriginCountry []string `json:"origin_country"`
 	TrailerURL    string   `json:"trailer_url"`
+	LogoURL       string   `json:"logo_url"`
 }
 
 type TMDBTVListResponse struct {

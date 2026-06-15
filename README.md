@@ -124,4 +124,4 @@ go run ./cmd/server
 - **TMDB 全局限流**：令牌桶，默认 40 req/s（`TMDB_RATE_LIMIT`）
 - **排队超时**：默认 5 秒（`TMDB_QUEUE_TIMEOUT`），超时后返回过期缓存；无过期缓存才 502
 - 同一 key 并发 miss 时使用 singleflight 合并 TMDB 请求
-- 预告片单独缓存 Key：`tmdb:trailer:{movie|tv}:{id}:{language}`，与列表缓存 TTL 相同
+- 预告片/Logo 合并缓存 Key：`tmdb:media:v2:{movie|tv}:{id}:{language}`，与列表缓存 TTL 相同
